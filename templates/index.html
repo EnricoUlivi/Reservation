@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prenotazioni</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f11;
+    --surface: #18181c;
+    --surface2: #222228;
+    --border: #2e2e38;
+    --accent: #c8a96e;
+    --accent2: #7eb8a4;
+    --danger: #c06060;
+    --text: #e8e6e0;
+    --muted: #6b6b78;
+    --green-dark: #2a5c3f;
+    --green-light: #3d8c60;
+    --yellow: #c8a930;
+    --gray-cell: #2a2a32;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 13px;
+  }
+
+  /* ── NAV ── */
+  nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+  }
+
+  nav .brand {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    color: var(--accent);
+    margin-right: 24px;
+    letter-spacing: 0.02em;
+  }
+
+  nav button {
+    background: none;
+    border: 1px solid transparent;
+    color: var(--muted);
+    padding: 5px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    transition: all .15s;
+  }
+
+  nav button:hover { color: var(--text); border-color: var(--border); }
+  nav button.active { color: var(--accent); border-color: var(--accent); }
+
+  nav .spacer { flex: 1; }
+
+  nav .ricalcola-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    transition: opacity .15s;
+  }
+  nav .ricalcola-btn:hover { opacity: .85; }
+
+  /* ── MAIN ── */
+  main {
+    padding: 28px 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── SECTION HEADER ── */
+  .sec-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .sec-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--accent);
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    transition: all .15s;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); }
+  .btn.primary:hover { opacity: .85; color: #000; }
+  .btn.danger { border-color: var(--danger); color: var(--danger); }
+  .btn.danger:hover { background: var(--danger); color: #fff; }
+  .btn.small { padding: 3px 10px; font-size: 11px; }
+
+  /* ── TABLE ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 4px;
+  }
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tr:hover td { background: var(--surface2); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    letter-spacing: .04em;
+  }
+  .badge.bassa { background: #1a3a2a; color: #6dbf8a; }
+  .badge.media { background: #1a2e3a; color: #6aafd4; }
+  .badge.alta  { background: #3a1a1a; color: #d47070; }
+  .badge.div   { background: #2a2a12; color: var(--accent); }
+
+  /* ── CALENDAR ── */
+  .cal-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+  }
+
+  .cal-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+
+  .cal-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .cal-table th {
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 2;
+    min-width: 32px;
+    width: 32px;
+    text-align: center;
+    padding: 6px 2px;
+    font-size: 10px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cal-table th.cam-header {
+    min-width: 90px;
+    width: 90px;
+    text-align: left;
+    padding-left: 10px;
+    left: 0;
+    z-index: 3;
+    background: var(--surface);
+  }
+
+  .cal-table td {
+    padding: 3px 2px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cal-table td.cam-label {
+    position: sticky;
+    left: 0;
+    background: var(--surface);
+    z-index: 1;
+    padding: 3px 10px;
+    text-align: left;
+    font-size: 11px;
+    color: var(--muted);
+    border-right: 1px solid var(--border);
+    min-width: 90px;
+  }
+
+  .day-cell {
+    width: 28px;
+    height: 22px;
+    border-radius: 3px;
+    display: inline-block;
+    cursor: pointer;
+    position: relative;
+    transition: transform .1s;
+  }
+  .day-cell:hover { transform: scale(1.15); z-index: 10; }
+  .day-cell.free    { background: var(--gray-cell); }
+  .day-cell.past    { background: #1c1c22; opacity: .5; }
+  .day-cell.booked  { background: var(--green-dark); }
+  .day-cell.booked2 { background: var(--green-light); }
+  .day-cell.conflict { background: var(--yellow); }
+  .day-cell.changeover { background: #8b2020; }
+  .day-cell.checkinout { background: #7a6a10; }
+  .day-cell.today-marker { outline: 2px solid var(--accent); }
+
+  /* ── MODAL ── */
+  .overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+    width: 440px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+
+  .form-group {
+    margin-bottom: 14px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 5px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color .15s;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus { border-color: var(--accent); }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .checkbox-row input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
+  .checkbox-row label { font-size: 12px; color: var(--text); }
+
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── TOOLTIP ── */
+  .tooltip-box {
+    display: none;
+    position: fixed;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-size: 11px;
+    line-height: 1.7;
+    z-index: 500;
+    pointer-events: none;
+    max-width: 220px;
+    color: var(--text);
+    box-shadow: 0 4px 20px rgba(0,0,0,.5);
+  }
+
+  /* ── LISTINO / CHECKOUT ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    max-width: 480px;
+  }
+
+  .card h3 {
+    font-family: 'Playfair Display', serif;
+    color: var(--accent);
+    margin-bottom: 16px;
+    font-size: 16px;
+  }
+
+  .price-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .price-row:last-child { border: none; }
+  .price-row label { color: var(--muted); font-size: 12px; }
+  .price-row input {
+    width: 90px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    text-align: right;
+    outline: none;
+  }
+  .price-row input:focus { border-color: var(--accent); }
+
+  .total-line {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 2px solid var(--accent);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .total-line span { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--accent); }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 28px; right: 28px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 18px;
+    font-size: 12px;
+    z-index: 999;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all .25s;
+    max-width: 300px;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.ok { border-color: var(--accent2); color: var(--accent2); }
+  #toast.err { border-color: var(--danger); color: var(--danger); }
+
+  /* ── SPINNER ── */
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* detail row */
+  .detail-row {
+    background: var(--surface2);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .detail-row td { padding: 6px 12px 10px 24px; }
+
+  .empty-state {
+    text-align: center;
+    color: var(--muted);
+    padding: 40px;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="brand">⌂ Prenotazioni</span>
+  <button class="active" onclick="setView('prenotazioni')">Prenotazioni</button>
+  <button onclick="setView('camere')">Camere</button>
+  <button onclick="setView('calendario')">Calendario</button>
+  <button onclick="setView('checkout')">Checkout</button>
+  <button onclick="setView('listino')">Listino</button>
+  <div class="spacer"></div>
+  <button class="ricalcola-btn" onclick="ricalcola()">↻ Ricalcola</button>
+</nav>
+
+<main>
+
+  <!-- ════════ PRENOTAZIONI ════════ -->
+  <div class="view active" id="view-prenotazioni">
+    <div class="sec-header">
+      <span class="sec-title">Prenotazioni</span>
+      <button class="btn primary" onclick="openModal('modal-pren')">+ Nuova</button>
+    </div>
+    <table id="tbl-pren">
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>Persone</th>
+          <th>Check-in</th>
+          <th>Check-out</th>
+          <th>Capienza</th>
+          <th>Camere assegnate</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody-pren"></tbody>
+    </table>
+  </div>
+
+  <!-- ════════ CAMERE ════════ -->
+  <div class="view" id="view-camere">
+    <div class="sec-header">
+      <span class="sec-title">Camere</span>
+      <button class="btn primary" onclick="openModal('modal-cam')">+ Nuova Camera</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>N°</th><th>Piano</th><th>Cap. Bassa</th><th>Cap. Media</th><th>Cap. Alta</th><th>Prenotazioni</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody-cam"></tbody>
+    </table>
+  </div>
+
+  <!-- ════════ CALENDARIO ════════ -->
+  <div class="view" id="view-calendario">
+    <div class="sec-header">
+      <span class="sec-title">Calendario</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span style="color:var(--muted);font-size:11px;">Legenda:</span>
+        <span style="background:var(--green-dark);width:14px;height:14px;display:inline-block;border-radius:2px;"></span><span style="font-size:11px;color:var(--muted)"> Prenotato</span>
+        <span style="background:#7a6a10;width:14px;height:14px;display:inline-block;border-radius:2px;margin-left:6px;"></span><span style="font-size:11px;color:var(--muted)"> Check-in/out</span>
+        <span style="background:#8b2020;width:14px;height:14px;display:inline-block;border-radius:2px;margin-left:6px;"></span><span style="font-size:11px;color:var(--muted)"> Cambio camera</span>
+        <span style="background:var(--yellow);width:14px;height:14px;display:inline-block;border-radius:2px;margin-left:6px;"></span><span style="font-size:11px;color:var(--muted)"> Conflitto</span>
+        <span style="background:var(--gray-cell);width:14px;height:14px;display:inline-block;border-radius:2px;margin-left:6px;"></span><span style="font-size:11px;color:var(--muted)"> Libero</span>
+      </div>
+    </div>
+    <div class="cal-tabs" id="cal-tabs"></div>
+    <div class="cal-wrap">
+      <table class="cal-table" id="cal-table"></table>
+    </div>
+  </div>
+
+  <!-- ════════ CHECKOUT ════════ -->
+  <div class="view" id="view-checkout">
+    <div class="sec-header"><span class="sec-title">Checkout</span></div>
+    <div class="card" style="max-width:520px;">
+      <h3>Calcolo conto</h3>
+      <div class="form-group">
+        <label>Prenotazione</label>
+        <select id="co-sel" onchange="coSelect()">
+          <option value="">— seleziona —</option>
+        </select>
+      </div>
+      <div style="border-top:1px solid var(--border);margin:14px 0 10px;padding-top:12px;">
+        <div style="font-size:11px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px;">Voci extra</div>
+        <div id="co-voci-extra"></div>
+        <div class="price-row" style="margin-top:8px;">
+          <label>Extra libero (€)</label>
+          <input type="number" id="co-extra" step="0.01" min="0" value="0" oninput="coCalc()">
+        </div>
+      </div>
+
+      <div class="total-line">
+        <span style="font-size:14px;color:var(--muted);font-family:'DM Mono'">Totale</span>
+        <span id="co-total">€ 0.00</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ LISTINO ════════ -->
+  <div class="view" id="view-listino">
+    <div class="sec-header">
+      <span class="sec-title">Listino prezzi</span>
+      <button class="btn primary" onclick="openModal('modal-voce');resetVoceModal()">+ Nuova voce</button>
+    </div>
+    <table id="tbl-listino" style="max-width:640px;">
+      <thead>
+        <tr>
+          <th>Voce</th>
+          <th>Unità</th>
+          <th style="text-align:right">Prezzo (€)</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody-listino"></tbody>
+    </table>
+  </div>
+
+</main>
+
+<!-- ════════ MODALS ════════ -->
+
+<!-- Nuova Prenotazione -->
+<div class="overlay" id="modal-pren">
+  <div class="modal">
+    <h2 id="modal-pren-title">Nuova Prenotazione</h2>
+    <input type="hidden" id="pren-edit-idx" value="-1">
+    <div class="form-group">
+      <label>Nome cliente</label>
+      <input type="text" id="p-nome">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Persone</label>
+        <input type="number" id="p-qty" min="1" value="2">
+      </div>
+      <div class="form-group">
+        <label>Capienza richiesta</label>
+        <select id="p-cap">
+          <option value="bassa">Bassa</option>
+          <option value="media" selected>Media</option>
+          <option value="alta">Alta</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Check-in</label>
+        <input type="date" id="p-in">
+      </div>
+      <div class="form-group">
+        <label>Check-out</label>
+        <input type="date" id="p-out">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Camera preferita (opzionale)</label>
+      <select id="p-roomreq">
+        <option value="-1">Nessuna preferenza</option>
+      </select>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="p-nomans">
+      <label for="p-nomans">No mansarda (piano 3)</label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="p-nopiano4">
+      <label for="p-nopiano4">No piano 4</label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="p-div">
+      <label for="p-div">Divisibile su più camere</label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-pren')">Annulla</button>
+      <button class="btn primary" onclick="submitPren()">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<!-- Nuova Camera / Modifica Camera -->
+<div class="overlay" id="modal-cam">
+  <div class="modal">
+    <h2 id="modal-cam-title">Nuova Camera</h2>
+    <input type="hidden" id="cam-edit-idx" value="-1">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Numero camera</label>
+        <input type="number" id="c-num" min="1" value="1">
+      </div>
+      <div class="form-group">
+        <label>Piano</label>
+        <select id="c-piano">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3 (Mansarda)</option>
+          <option value="4">4</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Cap. Bassa</label><input type="number" id="c-low" min="0" value="2"></div>
+      <div class="form-group"><label>Cap. Media</label><input type="number" id="c-mid" min="0" value="4"></div>
+    </div>
+    <div class="form-group"><label>Cap. Alta</label><input type="number" id="c-high" min="0" value="6"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-cam');resetCamModal()">Annulla</button>
+      <button class="btn primary" onclick="submitCam()">Aggiungi</button>
+    </div>
+  </div>
+</div>
+
+<!-- Conferma elimina -->
+<div class="overlay" id="modal-confirm">
+  <div class="modal" style="max-width:340px">
+    <h2>Conferma</h2>
+    <p id="confirm-msg" style="color:var(--muted);margin-bottom:20px;line-height:1.6;"></p>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-confirm')">Annulla</button>
+      <button class="btn danger" id="confirm-ok-btn">Elimina</button>
+    </div>
+  </div>
+</div>
+
+<!-- Voce Listino -->
+<div class="overlay" id="modal-voce">
+  <div class="modal" style="max-width:360px">
+    <h2 id="modal-voce-title">Nuova voce</h2>
+    <input type="hidden" id="voce-edit-id" value="-1">
+    <div class="form-group">
+      <label>Nome voce</label>
+      <input type="text" id="v-nome" placeholder="es. Colazione, Parcheggio...">
+    </div>
+    <div class="form-group">
+      <label>Unità (come appare nel checkout)</label>
+      <input type="text" id="v-unita" placeholder="es. cadauno, bottiglia, per notte...">
+    </div>
+    <div class="form-group">
+      <label>Prezzo (€)</label>
+      <input type="number" id="v-prezzo" step="0.01" min="0" value="0">
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-voce')">Annulla</button>
+      <button class="btn primary" onclick="submitVoce()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tooltip -->
+<div class="tooltip-box" id="tooltip"></div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+//  State
+// ─────────────────────────────────────────────
+let STATE = { camere: [], prenotazioni: [], prezzi: {} };
+let calMese = 5;
+let prezziDirty = false;
+
+// ─────────────────────────────────────────────
+//  Nav
+// ─────────────────────────────────────────────
+function setView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('nav button:not(.ricalcola-btn)').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'calendario') renderCal();
+  if (name === 'checkout') renderCoSel();
+}
+
+// ─────────────────────────────────────────────
+//  Data
+// ─────────────────────────────────────────────
+async function loadData() {
+  const r = await fetch('/api/data');
+  STATE = await r.json();
+  renderAll();
+}
+
+function renderAll() {
+  renderPren();
+  renderCam();
+  populatePrenRoomReq();
+  updateListino();
+  if (document.getElementById('view-calendario').classList.contains('active')) renderCal();
+  if (document.getElementById('view-checkout').classList.contains('active')) renderCoSel();
+}
+
+// ─────────────────────────────────────────────
+//  Prenotazioni table
+// ─────────────────────────────────────────────
+function assignedRooms(pren) {
+  const rooms = [];
+  STATE.camere.forEach(cam => {
+    cam.res.forEach(r => {
+      if (r.nome === pren.nome &&
+          r.in.giorno === pren.in.giorno &&
+          r.in.mese === pren.in.mese &&
+          r.in.anno === pren.in.anno)
+        rooms.push({ num: cam.num, qty: r.quantity });
+    });
+  });
+  // dedup per num camera (somma qty se stessa camera compare più volte)
+  const map = new Map();
+  rooms.forEach(r => map.set(r.num, (map.get(r.num) || 0) + r.qty));
+  return [...map.entries()].map(([num, qty]) => ({ num, qty }));
+}
+
+function fmt(d) { return `${String(d.giorno).padStart(2,'0')}/${String(d.mese).padStart(2,'0')}/${d.anno}`; }
+
+function renderPren() {
+  const tb = document.getElementById('tbody-pren');
+  if (!STATE.prenotazioni.length) {
+    tb.innerHTML = '<tr><td colspan="7" class="empty-state">Nessuna prenotazione</td></tr>';
+    return;
+  }
+  tb.innerHTML = STATE.prenotazioni.map((p, i) => {
+    const rooms = assignedRooms(p);
+    const roomStr = rooms.length
+      ? rooms.map(r => `Cam ${r.num}`).join(', ')
+      : '<span style="color:var(--danger)">—</span>';
+    // Dettaglio camere con persone
+    const camDettaglio = rooms.length
+      ? rooms.map(r => `<span style="display:inline-block;margin-right:12px;">Camera ${r.num}: <strong>${r.qty}</strong> ${r.qty === 1 ? 'persona' : 'persone'}</span>`).join('')
+      : '<span style="color:var(--muted)">non ancora assegnata</span>';
+    return `
+    <tr id="pren-row-${i}">
+      <td><strong>${p.nome}</strong></td>
+      <td>${p.quantity}</td>
+      <td>${fmt(p.in)}</td>
+      <td>${fmt(p.out)}</td>
+      <td>
+        <span class="badge ${p.capienza}">${p.capienza}</span>
+        ${p.div ? '<span class="badge div">div</span>' : ''}
+      </td>
+      <td style="font-size:12px;">${roomStr}</td>
+      <td style="display:flex;gap:6px;justify-content:flex-end;">
+        <button class="btn small" onclick="toggleDetail(${i})">dettagli</button>
+        <button class="btn small" onclick="editPren(${i})">modifica</button>
+        <button class="btn small danger" onclick="confirmDelete('pren',${i})">elimina</button>
+      </td>
+    </tr>
+    <tr class="detail-row" id="detail-${i}" style="display:none">
+      <td colspan="7">
+        <div style="margin-bottom:6px;">
+          Camera preferita: ${p.roomReq === -1 ? 'nessuna' : p.roomReq} &nbsp;·&nbsp;
+          No mansarda: ${p.noMans ? 'sì' : 'no'} &nbsp;·&nbsp;
+          No piano 4: ${p.noPiano4 ? 'sì' : 'no'} &nbsp;·&nbsp;
+          Divisibile: ${p.div ? 'sì' : 'no'}
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">${camDettaglio}</div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleDetail(i) {
+  const row = document.getElementById('detail-' + i);
+  row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+}
+
+// ─────────────────────────────────────────────
+//  Camere table
+// ─────────────────────────────────────────────
+function renderCam() {
+  const tb = document.getElementById('tbody-cam');
+  if (!STATE.camere.length) {
+    tb.innerHTML = '<tr><td colspan="7" class="empty-state">Nessuna camera</td></tr>';
+    return;
+  }
+  tb.innerHTML = STATE.camere.map((c, i) => {
+    const prenotStr = c.res.length
+      ? c.res.map(r => `<div style="padding:2px 0;border-bottom:1px solid var(--border);">${r.nome} &nbsp;<span style="color:var(--muted)">${fmt(r.in)} → ${fmt(r.out)} · ${r.quantity} pers.</span></div>`).join('')
+      : '<span style="color:var(--muted)">Nessuna prenotazione assegnata</span>';
+    return `
+    <tr id="cam-row-${i}">
+      <td><strong>${c.num}</strong></td>
+      <td>${c.piano}</td>
+      <td>${c.capLow}</td>
+      <td>${c.capMid}</td>
+      <td>${c.capHigh}</td>
+      <td style="font-size:11px;color:var(--muted)">${c.res.length} prenotaz.</td>
+      <td style="display:flex;gap:6px;justify-content:flex-end;">
+        <button class="btn small" onclick="toggleCamDetail(${i})">dettagli</button>
+        <button class="btn small" onclick="editCam(${i})">modifica</button>
+        <button class="btn small danger" onclick="confirmDelete('cam',${c.num})">elimina</button>
+      </td>
+    </tr>
+    <tr class="detail-row" id="cam-detail-${i}" style="display:none">
+      <td colspan="7" style="padding:8px 24px 12px;">
+        <div style="font-size:11px;">${prenotStr}</div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleCamDetail(i) {
+  const row = document.getElementById('cam-detail-' + i);
+  row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+}
+
+function editCam(i) {
+  const c = STATE.camere[i];
+  document.getElementById('cam-edit-idx').value = i;
+  document.getElementById('modal-cam-title').textContent = 'Modifica Camera ' + c.num;
+  document.getElementById('c-num').value   = c.num;
+  document.getElementById('c-num').disabled = true;
+  document.getElementById('c-piano').value = c.piano;
+  document.getElementById('c-low').value   = c.capLow;
+  document.getElementById('c-mid').value   = c.capMid;
+  document.getElementById('c-high').value  = c.capHigh;
+  openModal('modal-cam');
+}
+
+// ─────────────────────────────────────────────
+//  Calendario
+// ─────────────────────────────────────────────
+const MESI = ['Maggio','Giugno','Luglio','Agosto','Settembre'];
+const GIORNI_MESE = {5:31,6:30,7:31,8:31,9:30};
+const CAL_ANNO = new Date().getFullYear();
+
+function renderCalTabs() {
+  const tabs = document.getElementById('cal-tabs');
+  tabs.innerHTML = MESI.map((m, i) => {
+    const n = i + 5;
+    const style = n === calMese
+      ? 'style="background:var(--accent);color:#000;border-color:var(--accent);"'
+      : '';
+    return `<button class="btn" ${style} onclick="calMese=${n};renderCal()">${m}</button>`;
+  }).join('');
+}
+
+function dateToNum(d) {
+  return d.anno * 10000 + d.mese * 100 + d.giorno;
+}
+
+function dateInRange(d, anno, mese, giorno) {
+  // Una prenotazione "occupa" un giorno se: in <= giorno <= out
+  // Includiamo sia il checkin che il checkout per colorarli
+  const cur = anno * 10000 + mese * 100 + giorno;
+  return dateToNum(d.in) <= cur && cur <= dateToNum(d.out);
+}
+
+function isCheckin(r, anno, mese, g) {
+  return r.in.anno === anno && r.in.mese === mese && r.in.giorno === g;
+}
+function isCheckout(r, anno, mese, g) {
+  return r.out.anno === anno && r.out.mese === mese && r.out.giorno === g;
+}
+
+function renderCal() {
+  renderCalTabs();
+  const today = new Date();
+  const todayMese = today.getMonth() + 1;
+  const todayGiorno = today.getDate();
+  const todayAnno = today.getFullYear();
+  const giorni = GIORNI_MESE[calMese];
+  const table = document.getElementById('cal-table');
+
+  // Header
+  let html = '<thead><tr><th class="cam-header">Camera</th>';
+  for (let g = 1; g <= giorni; g++) {
+    const isToday = calMese === todayMese && g === todayGiorno;
+    html += `<th style="${isToday?'color:var(--accent)':''}">${g}</th>`;
+  }
+  html += '</tr></thead><tbody>';
+
+  STATE.camere.forEach(cam => {
+    // ordina res per data
+    const sorted = [...cam.res].sort((a, b) => {
+      if (a.in.mese !== b.in.mese) return a.in.mese - b.in.mese;
+      return a.in.giorno - b.in.giorno;
+    });
+
+    // Assegna colori alternati
+    const colorMap = new Map();
+    let toggle = false;
+    let prev = null;
+    sorted.forEach(r => {
+      if (prev) {
+        const prevOutDate = new Date(prev.out.anno, prev.out.mese - 1, prev.out.giorno);
+        const rInDate    = new Date(r.in.anno, r.in.mese - 1, r.in.giorno);
+        const diff = (rInDate - prevOutDate) / 86400000;
+        if (diff <= 1) toggle = !toggle;
+        else toggle = false;
+      }
+      colorMap.set(r, toggle);
+      prev = r;
+    });
+
+    html += `<tr><td class="cam-label">Cam ${cam.num}</td>`;
+
+    for (let g = 1; g <= giorni; g++) {
+      const hits = cam.res.filter(r => dateInRange(r, CAL_ANNO, calMese, g));
+      const past = (CAL_ANNO < todayAnno) ||
+                   (CAL_ANNO === todayAnno && calMese < todayMese) ||
+                   (CAL_ANNO === todayAnno && calMese === todayMese && g < todayGiorno);
+      const isToday = CAL_ANNO === todayAnno && calMese === todayMese && g === todayGiorno;
+
+      const hitsIn  = hits.filter(r => isCheckin(r,  CAL_ANNO, calMese, g));
+      const hitsOut = hits.filter(r => isCheckout(r, CAL_ANNO, calMese, g));
+      const hasChin  = hitsIn.length  > 0;
+      const hasCHout = hitsOut.length > 0;
+
+      // Cambio camera: una prenotazione finisce e un'altra inizia lo stesso giorno
+      const isChangeover = hasChin && hasCHout && hitsIn[0] !== hitsOut[0];
+      // Prenotazioni che davvero occupano (non solo in transizione)
+      const realHits = hits.filter(r => !isCheckout(r, CAL_ANNO, calMese, g) || isCheckin(r, CAL_ANNO, calMese, g));
+
+      let cls = 'free', tip = '';
+      if (past && !hits.length) {
+        cls = 'past';
+      } else if (isChangeover) {
+        cls = 'changeover';
+        tip = `Check-out: ${hitsOut[0].nome}\nCheck-in: ${hitsIn[0].nome}`;
+      } else if (realHits.length > 1) {
+        cls = 'conflict';
+        tip = 'CONFLITTO: ' + realHits.map(r=>r.nome).join(', ');
+      } else if (hits.length >= 1) {
+        const r = realHits[0] || hitsOut[0];
+        if (hasChin || hasCHout) {
+          cls = 'checkinout';
+        } else {
+          cls = colorMap.get(r) ? 'booked2' : 'booked';
+        }
+        const label = hasChin && hasCHout ? 'Check-in e Check-out'
+                    : hasChin  ? 'Check-in'
+                    : hasCHout ? 'Check-out' : '';
+        tip = `${r.nome}${label ? '\n' + label : ''}\n${r.quantity} persone\n${fmt(r.in)} → ${fmt(r.out)}`;
+      } else {
+        tip = `Libero ${String(g).padStart(2,'0')}/${String(calMese).padStart(2,'0')}`;
+      }
+      if (isToday) cls += ' today-marker';
+
+      html += `<td><span class="day-cell ${cls}" data-tip="${encodeURIComponent(tip)}"></span></td>`;
+    }
+    html += '</tr>';
+  });
+
+  html += '</tbody>';
+  table.innerHTML = html;
+
+  // Tooltip events
+  const tip = document.getElementById('tooltip');
+  table.querySelectorAll('.day-cell').forEach(cell => {
+    cell.addEventListener('mousemove', e => {
+      const text = decodeURIComponent(cell.dataset.tip || '');
+      if (!text) return;
+      tip.innerHTML = text.replace(/\n/g, '<br>');
+      tip.style.display = 'block';
+      tip.style.left = (e.clientX + 12) + 'px';
+      tip.style.top  = (e.clientY + 12) + 'px';
+    });
+    cell.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+  });
+}
+
+// ─────────────────────────────────────────────
+//  Checkout
+// ─────────────────────────────────────────────
+
+// Quantità extra per ogni voce del listino nel checkout { id -> quantità }
+let coQty = {};
+
+function renderCoVoci() {
+  const prezzi = STATE.prezzi || [];
+  const container = document.getElementById('co-voci-extra');
+  if (!container) return;
+  container.innerHTML = prezzi.map(v => `
+    <div class="price-row">
+      <label>${v.nome} <span style="color:var(--muted);font-size:10px;">(${v.unita})</span></label>
+      <input type="number" min="0" step="1" value="${coQty[v.id] || 0}"
+        oninput="coQty[${v.id}]=parseFloat(this.value)||0; coCalc()"
+        style="width:80px;">
+    </div>`).join('');
+  coCalc();
+}
+
+function renderCoSel() {
+  const sel = document.getElementById('co-sel');
+  sel.innerHTML = '<option value="">— seleziona —</option>' +
+    STATE.prenotazioni.map((p, i) =>
+      `<option value="${i}">${p.nome} (${fmt(p.in)})</option>`
+    ).join('');
+  renderCoVoci();
+  coCalc();
+}
+
+function coSelect() {
+  const i = parseInt(document.getElementById('co-sel').value);
+  if (isNaN(i) || i < 0) return;
+  const p = STATE.prenotazioni[i];
+  const d1 = new Date(p.in.anno, p.in.mese-1, p.in.giorno);
+  const d2 = new Date(p.out.anno, p.out.mese-1, p.out.giorno);
+  const notti = Math.max(1, Math.round((d2 - d1) / 86400000));
+  // Pre-imposta la quantità della voce notte se esiste
+  const vocenotte = (STATE.prezzi || []).find(v => v.unita && v.unita.toLowerCase().includes('notte'));
+  if (vocenotte) {
+    coQty[vocenotte.id] = notti;
+    renderCoVoci();
+  }
+  coCalc();
+}
+
+function coCalc() {
+  const notti  = 0; // non più usato direttamente, gestito dalle voci
+  const extra  = parseFloat(document.getElementById('co-extra').value) || 0;
+  const prezzi = STATE.prezzi || [];
+
+  // Trova la voce "notte" (quella con unita "per notte" oppure la prima)
+  // Somma le voci: per quelle con unita "per notte" moltiplica per notti, altrimenti per qty
+  let tot = extra;
+  for (const v of prezzi) {
+    const qty = coQty[v.id] || 0;
+    if (!qty) continue;
+    tot += qty * v.prezzo;
+  }
+  document.getElementById('co-total').textContent = '€ ' + tot.toFixed(2);
+}
+
+// ─────────────────────────────────────────────
+//  Listino
+// ─────────────────────────────────────────────
+function updateListino() {
+  renderListino();
+  renderCoVoci();
+}
+
+function renderListino() {
+  const tb = document.getElementById('tbody-listino');
+  const prezzi = STATE.prezzi || [];
+  if (!prezzi.length) {
+    tb.innerHTML = '<tr><td colspan="4" class="empty-state">Nessuna voce</td></tr>';
+    return;
+  }
+  tb.innerHTML = prezzi.map(v => `
+    <tr>
+      <td><strong>${v.nome}</strong></td>
+      <td style="color:var(--muted);font-size:11px;">${v.unita}</td>
+      <td style="text-align:right">${parseFloat(v.prezzo).toFixed(2)}</td>
+      <td style="display:flex;gap:6px;justify-content:flex-end;">
+        <button class="btn small" onclick="editVoce(${v.id})">modifica</button>
+        <button class="btn small danger" onclick="deleteVoce(${v.id})">elimina</button>
+      </td>
+    </tr>`).join('');
+}
+
+function resetVoceModal() {
+  document.getElementById('voce-edit-id').value = -1;
+  document.getElementById('modal-voce-title').textContent = 'Nuova voce';
+  document.getElementById('v-nome').value = '';
+  document.getElementById('v-unita').value = '';
+  document.getElementById('v-prezzo').value = 0;
+}
+
+function editVoce(id) {
+  const v = (STATE.prezzi || []).find(x => x.id === id);
+  if (!v) return;
+  document.getElementById('voce-edit-id').value = id;
+  document.getElementById('modal-voce-title').textContent = 'Modifica voce';
+  document.getElementById('v-nome').value   = v.nome;
+  document.getElementById('v-unita').value  = v.unita;
+  document.getElementById('v-prezzo').value = v.prezzo;
+  openModal('modal-voce');
+}
+
+async function submitVoce() {
+  const nome   = document.getElementById('v-nome').value.trim();
+  const unita  = document.getElementById('v-unita').value.trim();
+  const prezzo = parseFloat(document.getElementById('v-prezzo').value) || 0;
+  if (!nome) { toast('Inserisci il nome della voce', 'err'); return; }
+  const editId = parseInt(document.getElementById('voce-edit-id').value);
+  const isEdit = editId >= 0;
+  const body = { nome, unita, prezzo };
+  const url    = isEdit ? `/api/prezzi/${editId}` : '/api/prezzi';
+  const method = isEdit ? 'PUT' : 'POST';
+  const r = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const d = await r.json();
+  closeModal('modal-voce');
+  if (d.ok) { await loadData(); toast(isEdit ? 'Voce modificata' : 'Voce aggiunta', 'ok'); }
+  else toast(d.error || 'Errore', 'err');
+}
+
+async function deleteVoce(id) {
+  const r = await fetch(`/api/prezzi/${id}`, { method: 'DELETE' });
+  const d = await r.json();
+  if (d.ok) { await loadData(); toast('Voce eliminata', 'ok'); }
+  else toast('Errore', 'err');
+}
+
+function prezziChanged() {}
+
+// ─────────────────────────────────────────────
+//  Modals
+// ─────────────────────────────────────────────
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// Close on overlay click
+document.querySelectorAll('.overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+function populatePrenRoomReq() {
+  const sel = document.getElementById('p-roomreq');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="-1">Nessuna preferenza</option>' +
+    STATE.camere.map(c => `<option value="${c.num}">Camera ${c.num}</option>`).join('');
+  sel.value = cur || '-1';
+}
+
+// ─────────────────────────────────────────────
+//  Submit prenotazione (add / edit)
+// ─────────────────────────────────────────────
+async function submitPren() {
+  const nome = document.getElementById('p-nome').value.trim();
+  if (!nome) { toast('Inserisci il nome del cliente', 'err'); return; }
+  const inVal  = document.getElementById('p-in').value;
+  const outVal = document.getElementById('p-out').value;
+  if (!inVal || !outVal) { toast('Inserisci le date', 'err'); return; }
+  const inDate  = new Date(inVal);
+  const outDate = new Date(outVal);
+  if (outDate <= inDate) { toast('La data di uscita deve essere dopo quella di entrata', 'err'); return; }
+
+  const pren = {
+    nome,
+    quantity: parseInt(document.getElementById('p-qty').value) || 1,
+    in:  { giorno: inDate.getDate(),  mese: inDate.getMonth()+1,  anno: inDate.getFullYear() },
+    out: { giorno: outDate.getDate(), mese: outDate.getMonth()+1, anno: outDate.getFullYear() },
+    capienza: document.getElementById('p-cap').value,
+    noMans:    document.getElementById('p-nomans').checked,
+    noPiano4:  document.getElementById('p-nopiano4').checked,
+    roomReq:   parseInt(document.getElementById('p-roomreq').value),
+    div:       document.getElementById('p-div').checked,
+  };
+
+  const editIdx = parseInt(document.getElementById('pren-edit-idx').value);
+  const isEdit = editIdx >= 0;
+
+  const url    = isEdit ? `/api/prenotazioni/${editIdx}` : '/api/prenotazioni';
+  const method = isEdit ? 'PUT' : 'POST';
+
+  closeModal('modal-pren');
+  toast('<span class="spinner"></span>Elaborazione...', 'ok');
+
+  const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(pren) });
+  const d = await r.json();
+
+  if (d.ok) {
+    await loadData();
+    toast(isEdit ? 'Prenotazione modificata' : 'Prenotazione aggiunta', 'ok');
+  } else {
+    toast(d.error || 'Errore', 'err');
+  }
+}
+
+function editPren(i) {
+  const p = STATE.prenotazioni[i];
+  document.getElementById('pren-edit-idx').value = i;
+  document.getElementById('modal-pren-title').textContent = 'Modifica Prenotazione';
+  document.getElementById('p-nome').value = p.nome;
+  document.getElementById('p-qty').value  = p.quantity;
+  document.getElementById('p-cap').value  = p.capienza;
+  document.getElementById('p-nomans').checked   = p.noMans;
+  document.getElementById('p-nopiano4').checked = p.noPiano4 || false;
+  document.getElementById('p-div').checked      = p.div;
+  document.getElementById('p-roomreq').value  = p.roomReq;
+
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('p-in').value  = `${p.in.anno}-${pad(p.in.mese)}-${pad(p.in.giorno)}`;
+  document.getElementById('p-out').value = `${p.out.anno}-${pad(p.out.mese)}-${pad(p.out.giorno)}`;
+  openModal('modal-pren');
+}
+
+// Reset modal on open for new prenotazione
+document.getElementById('modal-pren').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-pren')) resetPrenModal();
+});
+document.querySelector('[onclick="openModal(\'modal-pren\')"]').addEventListener('click', resetPrenModal);
+
+function resetPrenModal() {
+  document.getElementById('pren-edit-idx').value = -1;
+  document.getElementById('modal-pren-title').textContent = 'Nuova Prenotazione';
+  document.getElementById('p-nome').value = '';
+  document.getElementById('p-qty').value  = 2;
+  document.getElementById('p-cap').value  = 'media';
+  document.getElementById('p-nomans').checked   = false;
+  document.getElementById('p-nopiano4').checked = false;
+  document.getElementById('p-div').checked      = false;
+  document.getElementById('p-roomreq').value  = -1;
+  // Default date = tomorrow
+  const tom = new Date(); tom.setDate(tom.getDate()+1);
+  const dayAfter = new Date(); dayAfter.setDate(dayAfter.getDate()+2);
+  const fmt2 = d => d.toISOString().slice(0,10);
+  document.getElementById('p-in').value  = fmt2(tom);
+  document.getElementById('p-out').value = fmt2(dayAfter);
+}
+
+// ─────────────────────────────────────────────
+//  Submit camera
+// ─────────────────────────────────────────────
+async function submitCam() {
+  const editIdx = parseInt(document.getElementById('cam-edit-idx').value);
+  const isEdit = editIdx >= 0;
+  const cam = {
+    num:    parseInt(document.getElementById('c-num').value),
+    piano:  parseInt(document.getElementById('c-piano').value),
+    capLow: parseInt(document.getElementById('c-low').value),
+    capMid: parseInt(document.getElementById('c-mid').value),
+    capHigh:parseInt(document.getElementById('c-high').value),
+  };
+  const url    = isEdit ? `/api/camere/${STATE.camere[editIdx].num}` : '/api/camere';
+  const method = isEdit ? 'PUT' : 'POST';
+  const r = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(cam) });
+  const d = await r.json();
+  closeModal('modal-cam');
+  resetCamModal();
+  if (d.ok) { await loadData(); toast(isEdit ? 'Camera modificata' : 'Camera aggiunta', 'ok'); }
+  else toast(d.error || 'Errore', 'err');
+}
+
+function resetCamModal() {
+  document.getElementById('cam-edit-idx').value = -1;
+  document.getElementById('modal-cam-title').textContent = 'Nuova Camera';
+  document.getElementById('c-num').disabled = false;
+  document.getElementById('c-num').value = '';
+  document.getElementById('c-piano').value = 1;
+  document.getElementById('c-low').value = 2;
+  document.getElementById('c-mid').value = 4;
+  document.getElementById('c-high').value = 6;
+}
+
+// ─────────────────────────────────────────────
+//  Delete confirm
+// ─────────────────────────────────────────────
+function confirmDelete(type, id) {
+  const msg = type === 'pren'
+    ? `Eliminare la prenotazione di <strong>${STATE.prenotazioni[id].nome}</strong>?`
+    : `Eliminare la camera <strong>${id}</strong>?`;
+  document.getElementById('confirm-msg').innerHTML = msg;
+  document.getElementById('confirm-ok-btn').onclick = () => doDelete(type, id);
+  openModal('modal-confirm');
+}
+
+async function doDelete(type, id) {
+  closeModal('modal-confirm');
+  if (type === 'pren') {
+    toast('<span class="spinner"></span>Eliminazione...', 'ok');
+    const r = await fetch(`/api/prenotazioni/${id}`, { method:'DELETE' });
+    const d = await r.json();
+    if (d.ok) { await loadData(); toast('Prenotazione eliminata', 'ok'); }
+    else toast('Errore', 'err');
+  } else {
+    const r = await fetch(`/api/camere/${id}`, { method:'DELETE' });
+    const d = await r.json();
+    if (d.ok) { await loadData(); toast('Camera eliminata', 'ok'); }
+    else toast('Errore', 'err');
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Ricalcola
+// ─────────────────────────────────────────────
+async function ricalcola() {
+  toast('<span class="spinner"></span>Ricalcolo in corso...', 'ok');
+  const r = await fetch('/api/ricalcola', { method:'POST' });
+  const d = await r.json();
+  if (d.ok) { await loadData(); toast('Ricalcolo completato', 'ok'); }
+  else toast(d.error || 'Ricalcolo fallito', 'err');
+}
+
+// ─────────────────────────────────────────────
+//  Toast
+// ─────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.innerHTML = msg;
+  el.className = 'show ' + (type || '');
+  clearTimeout(toastTimer);
+  if (!msg.includes('spinner')) {
+    toastTimer = setTimeout(() => { el.className = ''; }, 3000);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Init
+// ─────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>
